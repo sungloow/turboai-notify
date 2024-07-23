@@ -1,5 +1,3 @@
-from locale import currency
-
 from apscheduler.schedulers.background import BackgroundScheduler
 from urllib.parse import quote, urljoin
 import time
