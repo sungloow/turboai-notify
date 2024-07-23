@@ -1,0 +1,21 @@
+[active_dingtalk]
+active = "test"
+
+[dingtalk-test]
+webhook = "https://oapi.dingtalk.com/robot/send?access_token=xxxxxx"
+secret = "xxxxxx"
+
+[dingtalk-prod]
+webhook = "https://oapi.dingtalk.com/robot/send?access_token=xxxxxxx"
+secret = "xxxxxxxxxxx"
+
+[turboai]
+host = "https://api.turboai.one"
+key = "xxxxxxxxxx"
+key_id = "1"
+username = "username"
+password = "password"
+
+[logging]
+level = "info"
+path = "turboai.log"
