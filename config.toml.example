@@ -15,6 +15,7 @@ key = "xxxxxxxxxx"
 key_id = "1"
 username = "username"
 password = "password"
+units = 500000
 
 [logging]
 level = "info"
