@@ -22,19 +22,19 @@ def setup_logging():
     # Create file handler
     file_handler = logging.FileHandler(log_path, mode='w', encoding='utf-8')
     file_handler.setLevel(log_level)
-    file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(pathname)s:%(lineno)d - %(message)s')
     file_handler.setFormatter(file_formatter)
     logger.addHandler(file_handler)
 
     # Create console handler
     console_handler = logging.StreamHandler()
     console_handler.setLevel(log_level)
-    console_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    console_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(pathname)s:%(lineno)d - %(message)s')
     console_handler.setFormatter(console_formatter)
     logger.addHandler(console_handler)
 
 
-def job_aigc(scheduler=None):
+def do_job_aigc(scheduler=None):
     dingtalk_conf = config.get_dingtalk()
     webhook = dingtalk_conf.get("webhook")
     secret = dingtalk_conf.get("secret")
@@ -46,7 +46,7 @@ def job_aigc(scheduler=None):
         return
     token_data = aigc_api.get_token()
     success_token = bool(token_data.get("success"))
-    one_yuan_units = 500000
+    one_yuan_units = config.get("turboai", "units", 500000)
     text = ""
     action_card_btns = []
     if success_token:
@@ -67,25 +67,33 @@ def job_aigc(scheduler=None):
             text += f"  \n  **剩余额度:** 无限制  \n  **已用额度:** {currency}{used_credit}"
         else:
             text += f"  \n  **剩余额度:** **{currency}{credit}**  \n  **已用额度:** {currency}{used_credit}"
+
+        if 16 <= time.localtime().tm_hour <= 19:
+            try:
+                today_request_count, today_cost, total_tokens_today = aigc_api.get_dashboard_with_log()
+                text += f"  \n"
+                text += f"  \n  今日消费: {currency}{today_cost}"
+                text += f"  \n  今日请求: {today_request_count}次"
+                text += f"  \n  今日Token: {total_tokens_today}"
+            except Exception as e:
+                logging.error(f'获取今日消费信息失败, msg: {e}')
+
+        if credit < 1:
+            text += f"  \n  *余额不足，请及时充值*"
+            aigc_api_host = config.get("turboai", "host", "https://api.turboai.one")
+            action_url = urljoin(aigc_api_host, "/topup")
+            external_page_url = f"dingtalk://dingtalkclient/page/link?url={quote(action_url, 'utf-8')}&pc_slide=false"
+            action_card_btns.append(
+                {"title": "立即充值", "actionURL": external_page_url}
+            )
+
         if scheduler:
             current_job = scheduler.get_jobs()[0]
-            if credit < 1:
-                text += f"  \n  *余额不足，请及时充值*"
-                aigc_api_host = config.get("turboai", "host", "https://api.turboai.one")
-                action_url = urljoin(aigc_api_host, "/topup")
-                external_page_url = f"dingtalk://dingtalkclient/page/link?url={quote(action_url, 'utf-8')}&pc_slide=false"
-                action_card_btns.append(
-                    {"title": "立即充值", "actionURL": external_page_url}
-                )
+            if credit < 0.5:
                 current_job.reschedule(
-                    trigger="cron", day_of_week="mon-fri", hour="9-17", minute="*/30"
+                    trigger="cron", day_of_week="mon-fri", hour="9-18", minute=0
                 )
-                logging.info("TurboAI Credit is less than 10. Switching to every 30 minutes.")
-            elif credit < 3:
-                current_job.reschedule(
-                    trigger="cron", day_of_week="mon-fri", hour="9-17", minute=0
-                )
-                logging.info("TurboAI Credit is between 10 and 20. Switching to every hour.")
+                logging.info("TurboAI Credit is less than 0.5. Switching to every hour.")
             else:
                 current_job.reschedule(
                     trigger="cron", day_of_week="mon-fri", hour="9,17", minute=0
@@ -98,6 +106,13 @@ def job_aigc(scheduler=None):
     logging.info(text)
     title = "TurboAI 余额"
     bot.send_action_card(title=title, text=text, btns=action_card_btns)
+
+
+def job_aigc(scheduler=None):
+    try:
+        do_job_aigc(scheduler)
+    except Exception as e:
+        logging.error(e)
 
 
 if __name__ == "__main__":
