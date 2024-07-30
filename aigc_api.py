@@ -6,6 +6,7 @@ from urllib.parse import urljoin
 from datetime import datetime
 
 from config import config
+from enums.log_type import LogType
 
 def get_start_of_day_timestamp():
     # 获取当前日期
@@ -138,15 +139,15 @@ class AigcApi:
         url = urljoin(self.host_url, "/api/log/self")
         while True:
             params = {
-                'page': str(page),
-                'size': str(size),
+                'page': page,
+                'size': size,
                 'order': '-created_at',
                 'p': '0',
-                'token_name': str(token_name),
+                'token_name': token_name,
                 'model_name': '',
-                'start_timestamp': str(start_timestamp),
-                'end_timestamp': str(end_timestamp),
-                'log_type': '0',
+                'start_timestamp': start_timestamp,
+                'end_timestamp': end_timestamp,
+                'log_type': LogType.CONSUME.code,
             }
             res = self.session.get(url=url, params=params, headers=self.headers)
             rj = res.json()
