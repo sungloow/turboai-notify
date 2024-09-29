@@ -6,6 +6,7 @@ import logging
 from DingTalkBot import DingTalkBot
 from aigc_api import AigcApi
 from config import config
+from holiday import is_workday
 
 
 def setup_logging():
@@ -20,21 +21,28 @@ def setup_logging():
     logger.setLevel(log_level)
 
     # Create file handler
-    file_handler = logging.FileHandler(log_path, mode='w', encoding='utf-8')
+    file_handler = logging.FileHandler(log_path, mode="w", encoding="utf-8")
     file_handler.setLevel(log_level)
-    file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(pathname)s:%(lineno)d - %(message)s')
+    file_formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(pathname)s:%(lineno)d - %(message)s"
+    )
     file_handler.setFormatter(file_formatter)
     logger.addHandler(file_handler)
 
     # Create console handler
     console_handler = logging.StreamHandler()
     console_handler.setLevel(log_level)
-    console_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(pathname)s:%(lineno)d - %(message)s')
+    console_formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(pathname)s:%(lineno)d - %(message)s"
+    )
     console_handler.setFormatter(console_formatter)
     logger.addHandler(console_handler)
 
 
 def do_job_aigc(scheduler=None):
+    if not is_workday():
+        logging.info("今天不是工作日，不执行任务")
+        return
     dingtalk_conf = config.get_dingtalk()
     webhook = dingtalk_conf.get("webhook")
     secret = dingtalk_conf.get("secret")
@@ -64,19 +72,23 @@ def do_job_aigc(scheduler=None):
         text += f"**令牌名称:** {name}  \n  **令牌密钥:** {masked_key}"
         currency = config.get("turboai", "currency", "¥")
         if unlimited_quota:
-            text += f"  \n  **剩余额度:** 无限制  \n  **已用额度:** {currency}{used_credit}"
+            text += (
+                f"  \n  **剩余额度:** 无限制  \n  **已用额度:** {currency}{used_credit}"
+            )
         else:
             text += f"  \n  **剩余额度:** **{currency}{credit}**  \n  **已用额度:** {currency}{used_credit}"
 
         if 16 <= time.localtime().tm_hour <= 19:
             try:
-                today_request_count, today_cost, total_tokens_today = aigc_api.get_dashboard_with_log()
+                today_request_count, today_cost, total_tokens_today = (
+                    aigc_api.get_dashboard_with_log()
+                )
                 text += f"  \n"
                 text += f"  \n  今日消费: {currency}{today_cost}"
                 text += f"  \n  今日请求: {today_request_count}次"
                 text += f"  \n  今日Token: {total_tokens_today}"
             except Exception as e:
-                logging.error(f'获取今日消费信息失败, msg: {e}')
+                logging.error(f"获取今日消费信息失败, msg: {e}")
 
         if credit < 1:
             text += f"  \n  *余额不足，请及时充值*"
@@ -91,14 +103,18 @@ def do_job_aigc(scheduler=None):
             current_job = scheduler.get_jobs()[0]
             if credit < 0.5:
                 current_job.reschedule(
-                    trigger="cron", day_of_week="mon-fri", hour="9-18", minute=0
+                    trigger="cron", hour="9-18", minute=0
                 )
-                logging.info("TurboAI Credit is less than 0.5. Switching to every hour.")
+                logging.info(
+                    "TurboAI Credit is less than 0.5. Switching to every hour."
+                )
             else:
                 current_job.reschedule(
-                    trigger="cron", day_of_week="mon-fri", hour="9,17", minute=0
+                    trigger="cron", hour="9,17", minute=0
                 )
-                logging.info("TurboAI Credit is sufficient. Switching to 9:00 and 17:00.")
+                logging.info(
+                    "TurboAI Credit is sufficient. Switching to 9:00 and 17:00."
+                )
     else:
         msg = token_data.get("message")
         text += f"TurboAI余额查询失败, msg: {msg}"
@@ -121,9 +137,7 @@ if __name__ == "__main__":
     job_aigc = background_scheduler.add_job(
         job_aigc,
         "cron",
-        day_of_week="mon-fri",
-        hour="9-17",
-        minute="*/30",
+        minute="*/1",
         args=[background_scheduler],
     )
     logging.info("TurboAI notify app is running.")

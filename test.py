@@ -22,7 +22,9 @@ class TestAigcApi(unittest.TestCase):
         self.assertIsNotNone(dashboard_data)
 
     def test_get_dashboard_with_log(self):
-        dashboard_data = self.aigc_api.get_dashboard_with_log(start_timestamp=1721491200, end_timestamp=1721577600)
+        dashboard_data = self.aigc_api.get_dashboard_with_log(
+            start_timestamp=1721491200, end_timestamp=1721577600
+        )
         print(json.dumps(dashboard_data, ensure_ascii=False, indent=4))
         self.assertIsNotNone(dashboard_data)
 
