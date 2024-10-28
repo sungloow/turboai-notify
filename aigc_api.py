@@ -23,7 +23,7 @@ class AigcApi:
         "accept": "application/json, text/plain, */*",
         "accept-language": "zh-CN,zh;q=0.9",
         "priority": "u=1, i",
-        "referer": "https://api.turboai.one",
+        "referer": "https://api.uniapi.me",
         "sec-ch-ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
         "sec-ch-ua-mobile": "?0",
         "sec-ch-ua-platform": '"Linux"',
@@ -53,6 +53,7 @@ class AigcApi:
                 logging.info("Login successful.")
                 return True
             else:
+                logging.error(f"Login failed, response: {rj}")
                 # 延迟，避免过于频繁的尝试
                 if attempt < max_attempts - 1:
                     logging.warning(f"Login failed. Retrying ({attempt + 1}/{max_attempts})...")
@@ -123,7 +124,7 @@ class AigcApi:
 
         :return: Tuple of (today's request count, today's cost, today's token usage)
         """
-        self.headers['referer'] = 'https://api.turboai.io/panel/log'
+        self.headers['referer'] = 'https://api.uniapi.me/panel/log'
         token_name = self.get_token()['data']['name']
         start_timestamp = get_start_of_day_timestamp() if start_timestamp is None else start_timestamp
         end_timestamp = int(datetime.now().timestamp()) if end_timestamp is None else end_timestamp
@@ -180,3 +181,14 @@ class AigcApi:
         today_cost = round(today_cost / units, 3)
         return today_request_count, today_cost, total_tokens_today
 
+
+if __name__ == "__main__":
+    aigc_api = AigcApi()
+    login = aigc_api.login()
+    if not login:
+        print("Login failed.")
+        exit(1)
+    today_request_count, today_cost, total_tokens_today = aigc_api.get_dashboard_with_log()
+    print(f"今日消费: {today_cost}")
+    print(f"今日请求: {today_request_count}次")
+    print(f"今日Token: {total_tokens_today}")

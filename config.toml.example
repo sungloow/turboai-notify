@@ -10,9 +10,9 @@ webhook = "https://oapi.dingtalk.com/robot/send?access_token=xxxxxxx"
 secret = "xxxxxxxxxxx"
 
 [turboai]
-host = "https://api.turboai.one"
+host = "https://api.uniapi.me"
 key = "xxxxxxxxxx"
-key_id = "1"
+key_id = "4565"
 username = "username"
 password = "password"
 units = 500000

@@ -50,7 +50,7 @@ def do_job_aigc(scheduler=None):
     aigc_api = AigcApi()
     login = aigc_api.login()
     if not login:
-        bot.send_text("TurboAI登录失败")
+        bot.send_text("UniAPI登录失败")
         return
     token_data = aigc_api.get_token()
     success_token = bool(token_data.get("success"))
@@ -92,7 +92,7 @@ def do_job_aigc(scheduler=None):
 
         if credit < 1:
             text += f"  \n  *余额不足，请及时充值*"
-            aigc_api_host = config.get("turboai", "host", "https://api.turboai.one")
+            aigc_api_host = config.get("turboai", "host", "https://api.uniapi.me")
             action_url = urljoin(aigc_api_host, "/panel/topup")
             external_page_url = f"dingtalk://dingtalkclient/page/link?url={quote(action_url, 'utf-8')}&pc_slide=false"
             action_card_btns.append(
@@ -106,21 +106,21 @@ def do_job_aigc(scheduler=None):
                     trigger="cron", hour="9-18", minute=0
                 )
                 logging.info(
-                    "TurboAI Credit is less than 0.5. Switching to every hour."
+                    "UniAPI Credit is less than 0.5. Switching to every hour."
                 )
             else:
                 current_job.reschedule(
                     trigger="cron", hour="9,17", minute=0
                 )
                 logging.info(
-                    "TurboAI Credit is sufficient. Switching to 9:00 and 17:00."
+                    "UniAPI Credit is sufficient. Switching to 9:00 and 17:00."
                 )
     else:
         msg = token_data.get("message")
-        text += f"TurboAI余额查询失败, msg: {msg}"
+        text += f"UniAPI余额查询失败, msg: {msg}"
 
     logging.info(text)
-    title = "TurboAI 余额"
+    title = "UniAPI 余额"
     bot.send_action_card(title=title, text=text, btns=action_card_btns)
 
 
@@ -140,7 +140,7 @@ if __name__ == "__main__":
         minute="*/1",
         args=[background_scheduler],
     )
-    logging.info("TurboAI notify app is running.")
+    logging.info("UniAPI notify app is running.")
     background_scheduler.start()
 
     try:
