@@ -13,6 +13,7 @@ secret = "xxxxxxxxxxx"
 host = "https://api.uniapi.me"
 key = "xxxxxxxxxx"
 key_id = "4565"
+currency = "$"
 username = "username"
 password = "password"
 units = 500000
