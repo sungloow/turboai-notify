@@ -101,7 +101,7 @@ def do_job_aigc(scheduler=None):
 
         if scheduler:
             current_job = scheduler.get_jobs()[0]
-            if credit < 0.5:
+            if credit < 0.1:
                 current_job.reschedule(
                     trigger="cron", hour="9-18", minute=0
                 )
