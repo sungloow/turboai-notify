@@ -93,7 +93,7 @@ def do_job_aigc(scheduler=None):
         if credit < 1:
             text += f"  \n  *余额不足，请及时充值*"
             aigc_api_host = config.get("turboai", "host", "https://api.uniapi.me")
-            action_url = urljoin(aigc_api_host, "/panel/topup")
+            action_url = urljoin(aigc_api_host, "/dashboard/topup")
             external_page_url = f"dingtalk://dingtalkclient/page/link?url={quote(action_url, 'utf-8')}&pc_slide=false"
             action_card_btns.append(
                 {"title": "立即充值", "actionURL": external_page_url}
