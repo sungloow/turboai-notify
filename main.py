@@ -90,7 +90,7 @@ def do_job_aigc(scheduler=None):
             except Exception as e:
                 logging.error(f"获取今日消费信息失败, msg: {e}")
 
-        if credit < 1:
+        if credit < 0.2:
             text += f"  \n  *余额不足，请及时充值*"
             aigc_api_host = config.get("turboai", "host", "https://api.uniapi.me")
             action_url = urljoin(aigc_api_host, "/dashboard/topup")
@@ -101,12 +101,12 @@ def do_job_aigc(scheduler=None):
 
         if scheduler:
             current_job = scheduler.get_jobs()[0]
-            if credit < 0.1:
+            if credit < 0.2:
                 current_job.reschedule(
-                    trigger="cron", hour="9-18", minute=0
+                    trigger="cron", hour="9,12,15,18", minute=0
                 )
                 logging.info(
-                    "UniAPI Credit is less than 0.5. Switching to every hour."
+                    "UniAPI Credit is less than 0.2. Switching to every hour."
                 )
             else:
                 current_job.reschedule(
@@ -121,7 +121,10 @@ def do_job_aigc(scheduler=None):
 
     logging.info(text)
     title = "UniAPI 余额"
-    bot.send_action_card(title=title, text=text, btns=action_card_btns)
+    # 程序启动的第一次不发送消息
+    if not first_run:
+        bot.send_action_card(title=title, text=text, btns=action_card_btns)
+    first_run = False
 
 
 def job_aigc(scheduler=None):
@@ -132,6 +135,7 @@ def job_aigc(scheduler=None):
 
 
 if __name__ == "__main__":
+    first_run = True
     setup_logging()
     background_scheduler = BackgroundScheduler()
     job_aigc = background_scheduler.add_job(
