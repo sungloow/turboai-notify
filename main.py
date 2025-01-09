@@ -121,7 +121,8 @@ def do_job_aigc(scheduler=None):
 
     logging.info(text)
     title = "UniAPI 余额"
-    # 程序启动的第一次不发送消息
+
+    global first_run
     if not first_run:
         bot.send_action_card(title=title, text=text, btns=action_card_btns)
     first_run = False
